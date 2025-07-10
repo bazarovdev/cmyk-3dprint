@@ -14,7 +14,7 @@ parent: "CMYK-3D Print"
 
 1. Added 3D-Touch level sensor
 1. Converted to Klipper FW
-1. [Created driver for LCD screen](https://github.com/Klipper3d/klipper/pull/6639)
+1. [Created driver for LCD screen](a10m_display.md)
 1. During callibrations found that Z-axis is wobbling due to single lead screw
 1. Got 4 to 1 mixing printer [Zonestar Z9V5Pro](../Z9V5/) and stopped playing with it
 

@@ -4,14 +4,18 @@ title: "ZoneStar Z9V5Pro"
 parent: "CMYK-3D Print"
 ---
 
-{: .toc }
+1. TOC
+{:toc}
 
-# Klipper profile for Z9V5Pro-MK4 (with non mixing E4 extruder)
+## ZoneStar Z9V5Pro
+[![photo](resources/z9v5pro.webp)](https://www.zonestar3dshop.com/products/4-extruder-multi-color-large-size-fdm-3d-printer-diy-kit-z9v5pro)
 
-Forked from: [Z9V5Pro-MK4-Klipper](https://github.com/Z9V5PRO/Z9V5Pro-MK4-Klipper)  
-In addition, found this: [Z9V5-mixing-klipper](https://github.com/Nathan22211/Z9V5-mixing-klipper)
+* Core XY
+* 4 to 1 mixing/non-mixing hot-ends
+* 300x300x400 mm (actual bed 310x310mm)
+* STM32 based board
 
-## Printer overview
+### Printer internals overview
 The covers are hold by 4 screws each:
 * Top contains stepper motors of extruders and connectors to printing head:  
 [![Top of the printer](resources/undercover-top.jpg)](resources/undercover-top.jpg)
@@ -23,7 +27,16 @@ The board is `ZM3E4 V2.1`:
 * Schematics and parts placement were found in [Zonestar3D GitHub](https://github.com/ZONESTAR3D/Control-Board/tree/main/32bit/ZM3E4/ZM3E4V21)
 * In schematics, it is `STM32F103VCT6`, but on board, it is clone `APM32 F103VET6` by [Geehy](https://global.geehy.com/product/fifth/APM32F103)
 
-## Klipper Flashing procedure
+## Klipperize Z9V5Pro-MK4 (with non mixing E4 hotend)
+
+### Found references
+
+* Forked from: [Z9V5Pro-MK4-Klipper](https://github.com/Z9V5PRO/Z9V5Pro-MK4-Klipper)  
+* In addition, found this: [Z9V5-mixing-klipper](https://github.com/Nathan22211/Z9V5-mixing-klipper)
+* My dynamically updated [profile](https://github.com/bazarovdev/z9v5-klipper)
+
+
+### Klipper Flashing procedure
 1. Obtain Klipper by clonning it: [klipper3D](https://github.com/Klipper3d/klipper)
 1. Configure by going to cloned folder in terminal and run
     ```
@@ -78,7 +91,7 @@ Nov 02 02:45:18 pc-name mtp-probe[732048]: checking bus 1, device 77: "/sys/devi
 Nov 02 02:45:18 pc-name mtp-probe[732048]: bus: 1, device: 77 was not an MTP device
 ```
 
-## Changes from original:
+### Changes from forked
 1. Z-sensor wasn't mapped so added:
     ```
     [probe]
@@ -90,7 +103,7 @@ Nov 02 02:45:18 pc-name mtp-probe[732048]: bus: 1, device: 77 was not an MTP dev
     * screw locations also fixed and added delta of z-sensor position (for some reason it doesn't get compensated automatically)
 3. Calibrated `rotation_distance` for all 4 extruders
 
-## Heaters PID calibrations
+### Heaters PID calibrations
 To calibrate both PID loops of heaters used:
 ```
     PID_CALIBRATE HEATER=extruder TARGET=200
@@ -104,7 +117,7 @@ results:
 [![graphs of temperatures](resources/heaters_calib.png)](resources/heaters_calib.png)
 
 
-## Bed Mesh
+### Bed Mesh
 Created initial bed mesh before fixing anything using GUI `HEIGHTMAP` clicking `CALIBRATE` and then running `SAVE_CONFIG` in console
 result:  
 [![initial bed mesh](resources/initial_bed.png)](resources/initial_bed.png)
@@ -119,7 +132,7 @@ to adjust screws and bring all corner to the same plane, and running mesh again:
 Interestingly, I added plastic rectangle below PEI flexible top and the mesh didn't change, then added metallic ruler and the sensor was triggered even before going down. It means, that the sensor measures metal plate/magnetic sticker and not real bed position. Hopefully, switching to steel PEI plate will solve the issue. 
 Another option is to switch to BLTouch sensor that uses mechanical contact instead of inductive proximity sensor.
 
-## Extrusion speed
+### Extrusion speed
 Repeating experiment from this video:  
 https://www.youtube.com/watch?v=0xRtypDjNvI  
 [![extrusion of 300mm at various speeds](resources/extrusion_300mm.png)](resources/extrusion_300mm.png)
@@ -156,7 +169,50 @@ So `300mm/min` seems ok:
 ```
 
 
-## Trying to configure Orca Slicer
+### Pressure Advance (PA) calibrations
+
+Uses to start pushing fillament a little before starting printing and stopping extruding a little earlier, to compensate for long Bowden tubing that connects extruder and printing head and gives slack for filament to move and compress like spring inside tubing.
+
+Using Orca slicer's `Calibrations` menu created PA pattern for Bowden printers:  
+[![PA calibration pattern](resources/PA_calibration.jpeg)](resources/PA_calibration.jpeg)
+
+Looking at the corners, at 0.6 it looks sharp and the under-extrusion just starts.
+
+The value was put into config and into slicer settings.
+```
+[extruder]
+...
+pressure_advance = 0.6
+...
+```
+
+After configuring this I started to get Klipper errors of `MCU 'mcu' shutdown: Stepper too far in past`. Few evening past, I understood that it happens at short intervals and interplays between feed rate (`F`) and `PA` values. Still, didn't solve it completely. 
+
+### Input Shaper
+
+Used to modify frequency of pulses provided to motors to avoid generating oscillations due to mechanical resonances in printer construction.
+
+Calibrated accordingly to [Klipper manual](https://www.klipper3d.org/Resonance_Compensation.html)
+
+My initial prints and comparison of 2 methods `EI` and `MZV`. Haven't learned them yet, but sticked to recommendation to use `MZV` as less smoothing.
+
+3 prints:
+ - `-` - no input shaping, starting accel=1000, step 500
+ - `MZV` - starting accel=500, step 1000
+ - `EI` - starting accel=500, step 1000
+
+X axis:
+  
+[![Input shaping X axis](resources/input_shaper_x.jpeg)](resources/input_shaper_x.jpeg)
+
+Y axis:
+
+[![Input shaping Y axis](resources/input_shaper_y.jpeg)](resources/input_shaper_y.jpeg)
+
+Initial input shaper print failed because vibrations and probably bad cleaning of printer head before print. Solved by enabling `skirt` in slicer and so few loops of filament are extruded around model and so all leakages are wiped off before starting.
+    
+## Slicing
+### Trying to configure Orca Slicer
 
 1. From adding comments to all G-Code macros in Printer/Filament settings, slicing and inspecting file, tried to understand execution order:
     1. Machine Start Macro
@@ -188,46 +244,3 @@ So `300mm/min` seems ok:
     4. Machine_end
 
     ... to be continued
-
-## Pressure Advance (PA) calibrations
-
-Uses to start pushing fillament a little before starting printing and stopping extruding a little earlier, to compensate for long Bowden tubing that connects extruder and printing head and gives slack for filament to move and compress like spring inside tubing.
-
-Using Orca slicer's `Calibrations` menu created PA pattern for Bowden printers:  
-[![PA calibration pattern](resources/PA_calibration.jpeg)](resources/PA_calibration.jpeg)
-
-Looking at the corners, at 0.6 it looks sharp and the under-extrusion just starts.
-
-The value was put into config and into slicer settings.
-```
-[extruder]
-...
-pressure_advance = 0.6
-...
-```
-
-After configuring this I started to get Klipper errors of `MCU 'mcu' shutdown: Stepper too far in past`. Few evening past, I understood that it happens at short intervals and interplays between feed rate (`F`) and `PA` values. Still, didn't solve it completely. 
-
-## Input Shaper
-
-Used to modify frequency of pulses provided to motors to avoid generating oscillations due to mechanical resonances in printer construction.
-
-Calibrated accordingly to [Klipper manual](https://www.klipper3d.org/Resonance_Compensation.html)
-
-My initial prints and comparison of 2 methods `EI` and `MZV`. Haven't learned them yet, but sticked to recommendation to use `MZV` as less smoothing.
-
-3 prints:
- - `-` - no input shaping, starting accel=1000, step 500
- - `MZV` - starting accel=500, step 1000
- - `EI` - starting accel=500, step 1000
-
-X axis:
-  
-[![Input shaping X axis](resources/input_shaper_x.jpeg)](resources/input_shaper_x.jpeg)
-
-Y axis:
-
-[![Input shaping Y axis](resources/input_shaper_y.jpeg)](resources/input_shaper_y.jpeg)
-
-Initial input shaper print failed because vibrations and probably bad cleaning of printer head before print. Solved by enabling `skirt` in slicer and so few loops of filament are extruded around model and so all leakages are wiped off before starting.
-    

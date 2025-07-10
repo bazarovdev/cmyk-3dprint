@@ -11,10 +11,7 @@ However, after switching to Klipper, the display stopped working. I even found t
 [How to diagnose why the Geeetech A10X display shows nothing](https://klipper.discourse.group/t/how-to-diagnose-why-the-geeetech-a10x-display-shows-nothing/679)
 
 I initially thought it was just a matter of pin definitions, so I decided to map the pins from Marlin firmware to Klipper firmware.  
-Using the board configuration for Geeetech A10 V4.1:  
-https://github.com/MarlinFirmware/Marlin/tree/bugfix-2.1.x/Marlin/src/pins/mega/pins_GT2560_V3.h  
-and the mapping from Arduino pin numbers (e.g., 1) to AVR ports (e.g., E1):  
-https://github.com/MarlinFirmware/Marlin/tree/bugfix-2.1.x/Marlin/src/HAL/AVR/fastio/fastio_1280.h
+Using the board configuration for [Geeetech A10 V4.1](https://github.com/MarlinFirmware/Marlin/tree/bugfix-2.1.x/Marlin/src/pins/mega/pins_GT2560_V3.h) and the mapping from [Arduino pin numbers (e.g., 1) to AVR ports (e.g., E1)](https://github.com/MarlinFirmware/Marlin/tree/bugfix-2.1.x/Marlin/src/HAL/AVR/fastio/fastio_1280.h)  
 
 We get the following for `YHCB2004`:
 
