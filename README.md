@@ -26,7 +26,8 @@ When I first saw a 3D printer producing objects in a single color, I wondered: i
 | 6 | Zonestar | [Z8PM4Pro](https://github.com/ZONESTAR3D/Z8P) | [![z8o from official github](https://github.com/ZONESTAR3D/Z8P/blob/main/Z8P.jpg?raw=true)](https://github.com/ZONESTAR3D/Z8P) | 4 to 1<br>Ender style XYZ||
 | 7 | Zonestar | [Z9V5Pro](https://github.com/ZONESTAR3D/Z9/tree/main/Z9V5) | [![z9v5 from official github](https://raw.githubusercontent.com/ZONESTAR3D/Z9/refs/heads/main/Z9V5/MK5.jpg)](https://github.com/ZONESTAR3D/Z9/tree/main/Z9V5) | 4 to 1<br>Core XY<br>Hot ends:<br>[E4(non-mixing) or M4V6(mixing)](https://github.com/ZONESTAR3D/Upgrade-kit-guide/blob/main/HOTEND/FAQ_M4E4.md#whats-different-between-e4-and-m4-hotend) | I bought for $200CAD on marketplace "mixing" printer, but in fact it was Z9V5Pro-MK4 with non-mixing E4 extruder. I ordered M4V6 mixing hot end and my experiments are logged [here](Z9V5/).
 | 8 | Cetus     | [Cetus2](https://www.3dptk.com/review/cetus2-review) | [![image from review](https://www.3dptk.com/img_clanky/109/CETUS-2-4.jpg)](https://www.3dptk.com/review/cetus2-review) | 2 to 1 | The official site is down so links to review.<br>Very small purge volume to change color - but as a result heavy "aquafresh" effect|
+| 9 | DIY Somei3deas | [6-input Hot End](https://somei3deas.wordpress.com/2020/07/02/my-6-input-hot-end-part-11/) | [![image from blog](https://somei3deas.wordpress.com/wp-content/uploads/2020/06/5topandsideplatesfitted.jpg)](https://somei3deas.wordpress.com/2020/06/28/my-6-input-mixing-hot-end-part-10/) | 6 to 1 | DIY project with detailed build logs and experiments; [YouTube channel @deckingman](https://www.youtube.com/watch?v=1j0UH6ctTDI) |
 
+My first 3D printer was the [Geeetech A10M](A10M/). Later, I spotted a [ZoneStar Z9V5Pro](Z9V5/) on Facebook Marketplace just a few minutes’ drive away. It had been listed for months, and when the seller finally dropped the price to 200 CAD, I bought it as a birthday present for myself.
 
-My notes
-[Geeetech A10M](A10M/)
+Some notes about them might be found in this section.
