@@ -9,6 +9,40 @@ nav_order: 2
 1. TOC
 {:toc}
 
+
+## OrcaSlicer macro execution order during print
+
+From adding comments to all G-Code macros in Printer/Filament settings, slicing and inspecting file, tried to understand execution order:
+
+ 1. Machine Start Macro
+ 2. Change Filament Macro (from `Printer settings`)
+ 3. `T1` - tool activation G-code command
+ 4. Filament_1 Start Macro (from `Filament settings`)
+ 5. Before Layer Change Macro
+ 6. Time Lapse Macro
+ 7. Layer Change Macro
+ 8. Change Extrusion Role Macro (Type: Inner wall)
+ 9. Change Extrusion Role Macro (Type: Outer wall)
+ 10. Change Extrusion Role Macro (Type: Bottom surface)
+ 11. Filament_1 End Macro (from `Filament settings`)
+ 12. Change Filament Macro (from `Printer settings`)
+ 13. `T0` - tool activation G-code command
+ 14. Filament_0 Start Macro (from `Filament settings`)
+ 15. Change Extrusion Role Macro (Type: Inner wall)
+ 16. Change Extrusion Role Macro (Type: Outer wall)
+ 17. Change Extrusion Role Macro (Type: Bottom surface)
+ 18. Filament_0 End Macro (from `Filament settings`)
+ 19. Change Filament Macro (from `Printer settings`)
+ 20. `T2` - tool activation G-code command
+     
+     ...
+ 21. Filament_0 End Macro (from `Filament settings`)
+     
+     ... per filament
+ 22. Filament_3 End Macro (from `Filament settings`)
+ 23. Machine_end
+
+
 ## Defining colors
 The current way that I found to define colors is to add new filament and specify in `Filament start G-code` desired mix ratio:
 ```

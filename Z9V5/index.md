@@ -211,37 +211,5 @@ Y axis:
 [![Input shaping Y axis](resources/input_shaper_y.jpeg)](resources/input_shaper_y.jpeg)
 
 Initial input shaper print failed because vibrations and probably bad cleaning of printer head before print. Solved by enabling `skirt` in slicer and so few loops of filament are extruded around model and so all leakages are wiped off before starting.
-    
-## Slicing
-### Trying to configure Orca Slicer
 
-1. From adding comments to all G-Code macros in Printer/Filament settings, slicing and inspecting file, tried to understand execution order:
-    1. Machine Start Macro
-    1. Change Filament Macro (from `Printer settings`)
-    1. `T1` - tool activation G-code command
-    1. Filament_1 Start Macro (from `Filament settings`)
-    1. Before Layer Change Macro
-    1. Time Lapse Macro
-    1. Layer Change Macro
-    1. Change Extrusion Role Macro (Type: Inner wall)
-    1. Change Extrusion Role Macro (Type: Outer wall)
-    1. Change Extrusion Role Macro (Type: Bottom surface)
-    1. Filament_1 End Macro (from `Filament settings`)
-    1. Change Filament Macro (from `Printer settings`)
-    1. `T0` - tool activation G-code command
-    1. Filament_0 Start Macro (from `Filament settings`)
-    1. Change Extrusion Role Macro (Type: Inner wall)
-    1. Change Extrusion Role Macro (Type: Outer wall)
-    1. Change Extrusion Role Macro (Type: Bottom surface)
-    1. Filament_0 End Macro (from `Filament settings`)
-    1. Change Filament Macro (from `Printer settings`)
-    1. `T2` - tool activation G-code command
-        
-        ...
-    2. Filament_0 End Macro (from `Filament settings`)
-        
-        ... per filament
-    3. Filament_3 End Macro (from `Filament settings`)
-    4. Machine_end
-
-    ... to be continued
+Continue to [OrcaSlicer configuration](../OrcaSlicer/)...
