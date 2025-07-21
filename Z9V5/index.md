@@ -212,4 +212,142 @@ Y axis:
 
 Initial input shaper print failed because vibrations and probably bad cleaning of printer head before print. Solved by enabling `skirt` in slicer and so few loops of filament are extruded around model and so all leakages are wiped off before starting.
 
+### Retraction
+I run retraction calibration of mix of 4 to 1 with equal ratios 25%/25%/25%/25%:  
+
+![retraction calibrations](resources/retraction.jpg)
+
+
+The left tower is 0.5mm/mm from h=0 to 30mm, providing retraction values from r=0 to 15mm and given mix ratios 0f 25% it means each color was retracted at the peak by 15/4=3.75mm (while recommended is 5..8mm) and as seen from results for all values the head was oozing heavily.
+
+The right tower, is 1mm/mm from r=12mm retraction at h=0mm to r=48mm at h=36mm.
+
+As seen from the left tower, the retraction of 3.75mm is not enough.
+From the right, the optimum is probably somewhere between h=6 to 10mm so r=18 to 22mm, choosing 20mm give that each filament was retracted by 20*0.25=5mm.
+
+The problem that depending on mixing ratio, the filaments will be retracted by default distances.
+To solve it I created macros for FW retraction G10/G11, that ignore mixing factors and retract by hardcoded 5mm value.
+
+During testing ti gave better results, but running longer print, the filaments that are not participating in mixing, retracted back and forth at the same point and extruder's gear cuts into it and breaks the filament.
+
+The solution was modifying macros one more time retracting only active filaments:
+(I added to `M164` to store also normalized mixed factors and so very small values mean these filaments are not active)
+
+{% raw %}
+```python
+[gcode_macro M164]
+description: Applies the set mixing factors to the extruders
+# default values:
+variable_e0_parts : 100
+variable_e1_parts : 0
+variable_e2_parts : 0
+variable_e3_parts : 0
+variable_e0_norm : 0
+variable_e1_norm : 0
+variable_e2_norm : 0
+variable_e3_norm : 0
+gcode:
+    # normalize the parts to sum of 1
+    SET_GCODE_VARIABLE MACRO=M164 VARIABLE=e0_norm VALUE={e0_parts / (e0_parts + e1_parts + e2_parts + e3_parts) | float}
+    SET_GCODE_VARIABLE MACRO=M164 VARIABLE=e1_norm VALUE={e1_parts / (e0_parts + e1_parts + e2_parts + e3_parts) | float}
+    SET_GCODE_VARIABLE MACRO=M164 VARIABLE=e2_norm VALUE={e2_parts / (e0_parts + e1_parts + e2_parts + e3_parts) | float}
+    SET_GCODE_VARIABLE MACRO=M164 VARIABLE=e3_norm VALUE={e3_parts / (e0_parts + e1_parts + e2_parts + e3_parts) | float}
+    M118 scaled rot-dist_e0 { printer.configfile.settings.extruder.rotation_distance / (e0_norm + 0.000001) | float }
+    M118 scaled rot-dist_e1 { printer.configfile.settings['extruder_stepper extruder_1'].rotation_distance / (e1_norm + 0.000001) | float }
+    M118 scaled rot-dist_e2 { printer.configfile.settings['extruder_stepper extruder_2'].rotation_distance / (e2_norm + 0.000001) |float }
+    M118 scaled rot-dist_e3 { printer.configfile.settings['extruder_stepper extruder_3'].rotation_distance / (e3_norm + 0.000001) |float }
+    # activate stepper percentages
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_1 MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_2 MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_3 MOTION_QUEUE=extruder
+    SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE={ printer.configfile.settings.extruder.rotation_distance / (e0_norm+0.000001)|float }
+    SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_1 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_1'].rotation_distance / (e1_norm+0.000001)|float }
+    SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_2 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_2'].rotation_distance / (e2_norm+0.000001)|float }
+    SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_3 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_3'].rotation_distance / (e3_norm+0.000001)|float }
+    M118 Mixing factors {e0} {e1} {e2} {e3} are activated
+
+[gcode_macro G10]
+description: performs retraction and temporary cancels mixing factors but only on active extruders e_norm < 0.001
+# default values:
+variable_retraction_distance : 5
+variable_feedrate: 40
+gcode:
+    {% set e0_norm = printer["gcode_macro M164"].e0_norm|default(1) %}
+    {% set e1_norm = printer["gcode_macro M164"].e1_norm|default(0) %}
+    {% set e2_norm = printer["gcode_macro M164"].e2_norm|default(0) %}
+    {% set e3_norm = printer["gcode_macro M164"].e3_norm|default(0) %}
+    # activate stepper percentages
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_1 MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_2 MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_3 MOTION_QUEUE=extruder
+    {% if e0_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE={ printer.configfile.settings.extruder.rotation_distance / (e0_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE={ printer.configfile.settings.extruder.rotation_distance | float }
+    {% endif %}
+    {% if e1_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_1 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_1'].rotation_distance / (e1_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_1 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_1'].rotation_distance | float }
+    {% endif %}
+    {% if e2_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_2 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_2'].rotation_distance / (e2_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_2 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_2'].rotation_distance | float }
+    {% endif %}
+    {% if e3_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_3 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_3'].rotation_distance / (e3_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_3 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_3'].rotation_distance | float }
+    {% endif %}
+    M118 Retracting all active extruders by {retraction_distance} mm
+    G1 E-{retraction_distance} F{feedrate*60 | float}
+
+[gcode_macro G11]
+description: performs unretraction and sets back mixing factors
+# default values:
+variable_unretraction_distance : 5
+variable_feedrate: 40
+gcode:
+    {% set e0_norm = printer["gcode_macro M164"].e0_norm|default(1) %}
+    {% set e1_norm = printer["gcode_macro M164"].e1_norm|default(0) %}
+    {% set e2_norm = printer["gcode_macro M164"].e2_norm|default(0) %}
+    {% set e3_norm = printer["gcode_macro M164"].e3_norm|default(0) %}
+    # activate stepper percentages
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_1 MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_2 MOTION_QUEUE=extruder
+    SYNC_EXTRUDER_MOTION EXTRUDER=extruder_3 MOTION_QUEUE=extruder
+    {% if e0_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE={ printer.configfile.settings.extruder.rotation_distance / (e0_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE={ printer.configfile.settings.extruder.rotation_distance | float }
+    {% endif %}
+    {% if e1_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_1 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_1'].rotation_distance / (e1_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_1 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_1'].rotation_distance | float }
+    {% endif %}
+    {% if e2_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_2 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_2'].rotation_distance / (e2_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_2 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_2'].rotation_distance | float }
+    {% endif %}
+    {% if e3_norm < 0.001 %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_3 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_3'].rotation_distance / (e3_norm+0.000001) | float }
+    {% else %}
+        SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder_3 DISTANCE={ printer.configfile.settings['extruder_stepper extruder_3'].rotation_distance | float }
+    {% endif %}
+    M118 Unretracting all active extruders by {unretraction_distance} mm
+    G1 E{unretraction_distance} F{feedrate*60 | float}
+    M118 Returning mixing factors
+    M164
+
+
+```
+{% endraw %}
+
+
 Continue to [OrcaSlicer configuration](../OrcaSlicer/)...
