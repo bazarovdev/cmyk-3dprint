@@ -95,4 +95,17 @@ The results after updating the flushing volumes and enabling prime tower:
 ![purged](resources/purged.jpg)
 \* the bottom right transition by mistake was skipped and had smaller number
 
+## Checking mixed colors
 
+I created rectangles of different mix ratios:  
+\* OrcaSlicer `v2.3.0` (the latest release) and older [have bug](https://github.com/SoftFever/OrcaSlicer/issues/8798) in flushing volumes on first layer so not enough filament purged and color changes in the middle 
+![buggy mixing](resources/mix_orca_2.3.0.jpg)
+
+OrcaSlice `v2.3.1-dev`(next version in development to be released) has [the bug fixed PR#9235](https://github.com/SoftFever/OrcaSlicer/pull/9235)
+![good mixing](resources/mix_orca_2.3.1_fixed.jpg)
+
+
+## TODO: 
+1. improve mixing (try different inserts into print head)
+2. fix first layer (add adaptive bed leveling - when bed probed exactly under printed model each print)
+3. try improve oozing and plastic blobs (dry filament as a first step, try to play with settings)
